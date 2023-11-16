@@ -3,16 +3,16 @@ FROM quay.io/lvh-images/lvh:latest AS lvh
 
 FROM ubuntu:rolling
 
-COPY --from=lvh /usr/bin/lvh /usr/bin/lvh
 RUN apt-get update --quiet && \
      apt-get upgrade --quiet --yes &&  \
      apt-get install --quiet --yes --no-install-recommends \
           mmdebstrap \
           libguestfs-tools \
           qemu-utils \
-          extlinux \
           linux-image-generic \
           zstd
 
 RUN apt-get install debian-archive-keyring && \
     cp /usr/share/keyrings/debian-archive-keyring.gpg /etc/apt/trusted.gpg.d/
+
+COPY --from=lvh /usr/bin/lvh /usr/bin/lvh

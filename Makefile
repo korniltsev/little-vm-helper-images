@@ -10,7 +10,7 @@ COMPLEXITY_TEST_IMAGES    ?= $(OCIORG)/complexity-test
 KERNEL_BUILDER_TAG        ?= main
 ROOT_BUILDER_TAG          ?= main
 ROOT_IMAGES_TAG           ?= main
-KERNEL_VERSIONS           ?= 4.19 5.4 5.10 5.15 6.1 bpf-next
+KERNEL_VERSIONS           ?= 6.1
 
 DOCKER ?= docker
 export DOCKER_BUILDKIT = 1
@@ -36,36 +36,36 @@ root-builder:
 .PHONY: root-images
 root-images: root-builder
 	$(DOCKER) build -f dockerfiles/root-images \
-		--build-arg ROOT_BUILDER_TAG=latest \
+		--build-arg ROOT_BUILDER_TAG=$(ROOT_BUILDER_TAG) \
 		-t $(ROOT_IMAGES):$(ROOT_IMAGES_TAG)  .
 
 .PHONY: kernel-images
 kernel-images: kernel-builder
 	for v in $(KERNEL_VERSIONS) ; do \
-		$(DOCKER) build --no-cache \
+		$(DOCKER) build  \
 			--build-arg KERNEL_BUILDER_TAG=$(KERNEL_BUILDER_TAG) \
 			--build-arg KERNEL_VER=$$v \
 			-f dockerfiles/kernel-images -t $(KERNEL_IMAGES):$$v . ; \
 	done
 
-.PHONY: kind
-kind: kernel-images root-images
-	for v in $(KERNEL_VERSIONS) ; do \
-		 $(DOCKER) build --no-cache \
-			--build-arg KERNEL_VER=$$v \
-			--build-arg KERNEL_IMAGE_TAG=$$v-${KERNEL_BUILDER_TAG} \
-			--build-arg ROOT_BUILDER_TAG=$(ROOT_BUILDER_TAG) \
-			--build-arg ROOT_IMAGES_TAG=$(ROOT_IMAGES_TAG) \
-			-f dockerfiles/kind-images -t $(KIND_IMAGES):$$v . ; \
-	done
+# .PHONY: kind
+# kind: kernel-images root-images
+# 	for v in $(KERNEL_VERSIONS) ; do \
+# 		 $(DOCKER) build  \
+# 			--build-arg KERNEL_VER=$$v \
+# 			--build-arg KERNEL_IMAGE_TAG=$$v-${KERNEL_BUILDER_TAG} \
+# 			--build-arg ROOT_BUILDER_TAG=$(ROOT_BUILDER_TAG) \
+# 			--build-arg ROOT_IMAGES_TAG=$(ROOT_IMAGES_TAG) \
+# 			-f dockerfiles/kind-images -t $(KIND_IMAGES):$$v . ; \
+# 	done
 
-.PHONY: complexity-test
-complexity-test: kernel-images root-images
-	for v in $(KERNEL_VERSIONS) ; do \
-		 $(DOCKER) build --no-cache \
-			--build-arg KERNEL_VER=$$v \
-			--build-arg KERNEL_IMAGE_TAG=$$v-${KERNEL_BUILDER_TAG} \
-			--build-arg ROOT_BUILDER_TAG=$(ROOT_BUILDER_TAG)_ \
-			--build-arg ROOT_IMAGES_TAG=$(ROOT_IMAGES_TAG) \
-			-f dockerfiles/complexity-test-images -t $(COMPLEXITY_TEST_IMAGES):$$v . ; \
-	done
+# .PHONY: complexity-test
+# complexity-test: kernel-images root-images
+# 	for v in $(KERNEL_VERSIONS) ; do \
+# 		 $(DOCKER) build --no-cache \
+# 			--build-arg KERNEL_VER=$$v \
+# 			--build-arg KERNEL_IMAGE_TAG=$$v-${KERNEL_BUILDER_TAG} \
+# 			--build-arg ROOT_BUILDER_TAG=$(ROOT_BUILDER_TAG)_ \
+# 			--build-arg ROOT_IMAGES_TAG=$(ROOT_IMAGES_TAG) \
+# 			-f dockerfiles/complexity-test-images -t $(COMPLEXITY_TEST_IMAGES):$$v . ; \
+# 	done

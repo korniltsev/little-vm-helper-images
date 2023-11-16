@@ -4,14 +4,24 @@
 
 ARG ROOT_BUILDER_TAG=20230707.160728
 
-FROM quay.io/lvh-images/root-builder-ci:"${ROOT_BUILDER_TAG}" AS builder
-COPY _data /data
-# mmdebstrap outputs messages in stderr, so we redirect stderr
-RUN lvh images build --dir /data 2>&1
-RUN zstd --compress --rm --threads=0 /data/images/*.qcow2
 
-# Can't use scratch here because we use `docker create` elsewhere, and
-# that doesn't work without an explicit command. Satisfy this with
-# busybox.
-FROM busybox
-COPY --from=builder /data/images /data/images
+FROM quay.io/lvh-images/root-builder:"${ROOT_BUILDER_TAG}" AS builder
+
+RUN apt-get -y install ipxe-qemu vim
+
+COPY --from=quay.io/lvh-images/kernel-images:6.1 /data /ext-kernels
+
+COPY _data /data
+RUN mv /usr/bin/qemu-system-aarch64 /usr/bin/qemu-system-aarch64-orig
+RUN cp /data/qemu-wrapper.py /usr/bin/qemu-system-aarch64 && chmod +x /usr/bin/qemu-system-aarch64
+
+
+# mmdebstrap outputs messages in stderr, so we redirect stderr
+#RUN lvh images build --dir /data 2>&1
+# RUN zstd --compress --rm --threads=0 /data/images/*.qcow2
+
+# # Can't use scratch here because we use `docker create` elsewhere, and
+# # that doesn't work without an explicit command. Satisfy this with
+# # busybox.
+# FROM busybox
+# COPY --from=builder /data/images /data/images
